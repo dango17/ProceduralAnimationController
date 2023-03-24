@@ -1871,9 +1871,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   anim: {fileID: 6585324416809316562}
   isClimbing: 0
-  positionOffset: 0
-  offsetFromWall: 0.3
+  positionOffset: 0.5
+  offsetFromWall: 0.45
   speed_multiplier: 0.2
+  climbSpeed: 3
+  rotateSpeed: 5
+  inAngleDistance: 1
+  horizontal: 0
+  vertical: 0
 --- !u!4 &423212978
 Transform:
   m_ObjectHideFlags: 0

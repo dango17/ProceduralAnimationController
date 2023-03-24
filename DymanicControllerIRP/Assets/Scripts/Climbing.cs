@@ -21,6 +21,12 @@ namespace DO
         public float positionOffset;
         public float offsetFromWall = 0.3f;
         public float speed_multiplier = 0.2f;
+        public float climbSpeed = 3;
+        public float rotateSpeed = 5;
+        public float inAngleDistance = 1; 
+
+        public float horizontal;
+        public float vertical; 
 
         Transform helper;
         float delta; 
@@ -47,6 +53,7 @@ namespace DO
             RaycastHit hit; 
             if(Physics.Raycast(origin, dir, out hit, 5))
             {
+                helper.position = PosWithOffset(origin, hit.point);
                 InitalizeClimbing(hit); 
             }
         }
@@ -54,6 +61,7 @@ namespace DO
         void InitalizeClimbing(RaycastHit hit)
         {
             isClimbing = true;
+
             helper.transform.rotation = Quaternion.LookRotation(-hit.normal);
             startPos = transform.position;
             targetPos = hit.point + (hit.normal * offsetFromWall);
@@ -76,6 +84,82 @@ namespace DO
                 GetInPosition(); 
                 return; 
             }
+
+            if(!isLerping)
+            {
+                horizontal = Input.GetAxis("Horizontal");
+                vertical = Input.GetAxis("Vertical");
+                float moveAmount = Mathf.Abs(horizontal) + Mathf.Abs(vertical);
+
+                Vector3 h = helper.right * horizontal;
+                Vector3 v = helper.up * vertical;
+                Vector3 moveDir = (h + v).normalized;
+
+                bool canMove = CanMove(moveDir);
+                if (!canMove || moveDir == Vector3.zero)
+                    return;
+
+                t = 0;
+                isLerping = true;
+                startPos = transform.position;
+                //Vector3 targetPosition = helper.position - transform.position;
+                targetPos = helper.position; 
+            }
+            else
+            {
+                t += delta * climbSpeed;
+                if(t > 1)
+                {
+                    t = 1;
+                    isLerping = false; 
+                }
+                Vector3 climbPosition = Vector3.Lerp(startPos, targetPos, t);
+                transform.position = climbPosition;
+                transform.rotation = Quaternion.Slerp(transform.rotation, helper.rotation, delta * rotateSpeed);
+            }
+        }
+
+        bool CanMove(Vector3 moveDir)
+        {
+            Vector3 origin = transform.position;
+            float dis = positionOffset;
+            Vector3 dir = moveDir;
+            Debug.DrawRay(origin, dir * dis, Color.red);
+            RaycastHit hit; 
+
+            if(Physics.Raycast(origin, dir, out hit, dis))
+            {
+                return false; 
+            }
+
+            origin += moveDir * dis;
+            dir = helper.forward;
+            float dis2 = inAngleDistance;
+
+            Debug.DrawRay(origin, dir * dis2); 
+            if(Physics.Raycast(origin, dir, out hit, dis))
+            {
+                helper.position = PosWithOffset(origin, hit.point);
+                helper.rotation = Quaternion.LookRotation(-hit.normal);
+                return true; 
+            }
+
+            //Incase previous raycast fails 
+            origin += dir * dis2;
+            dir = -Vector3.up;
+
+            Debug.DrawRay(origin, dir, Color.yellow); 
+            if(Physics.Raycast(origin, dir, out hit, dis2))
+            {
+                float angle = Vector3.Angle(helper.up, hit.normal); 
+                if(angle < 40)
+                {
+                    helper.position = PosWithOffset(origin, hit.point);
+                    helper.rotation = Quaternion.LookRotation(-hit.normal);
+                    return true;
+                }
+            }
+            return false; 
         }
 
         void GetInPosition()
@@ -91,7 +175,8 @@ namespace DO
             }
 
             Vector3 targetPosition = Vector3.Lerp(startPos, targetPos, t);
-            transform.position = targetPosition; 
+            transform.position = targetPosition;
+            transform.rotation = Quaternion.Slerp(transform.rotation, helper.rotation, delta * rotateSpeed); 
         }
 
         Vector3 PosWithOffset(Vector3 origin, Vector3 target)
