@@ -11,14 +11,22 @@ namespace DO
         IKSnapshot ikBase;
         IKSnapshot current = new IKSnapshot();
         IKSnapshot next = new IKSnapshot();
+        IKGoals goals = new IKGoals(); 
 
         public float w_rightHand;
-        public float w_lefthHand;
+        public float w_leftHand;
         public float w_leftFoot;
         public float w_rightFoot;
 
         Vector3 rightHand, leftHand, rightFoot, leftFoot;
-        Transform h; 
+        Transform h;
+
+        bool isMirror;
+        bool isLeft;
+        Vector3 previousMoveDirection;
+
+        float delta;
+        public float lerpSpeed = 1; 
 
         public void Initalization(Climbing climbing, Transform helper)
         {
@@ -27,20 +35,84 @@ namespace DO
             h = helper;
         }
 
-        public void CreatePositions(Vector3 origin)
+        public void CreatePositions(Vector3 origin, Vector3 moveDir, bool isMidAnim)
         {
+            delta = Time.deltaTime; 
+            HandleAnimation(moveDir, isMidAnim); 
+
+            if(!isMidAnim)
+            {
+                UpdateGoals(moveDir); 
+            }
+            else
+            {
+                UpdateGoals(previousMoveDirection); 
+            }
+
             IKSnapshot ik = CreateSnapshot(origin);
             CopySnapshot(ref current, ik);
 
-            UpdateIKPosition(AvatarIKGoal.LeftFoot, current.leftFoot);
-            UpdateIKPosition(AvatarIKGoal.RightFoot, current.rightFoot);
-            UpdateIKPosition(AvatarIKGoal.LeftHand, current.leftHand);
-            UpdateIKPosition(AvatarIKGoal.RightHand, current.rightHand);
+            SetIKPosition(isMidAnim, goals.lf, current.leftFoot, AvatarIKGoal.LeftFoot);
+            SetIKPosition(isMidAnim, goals.rf, current.rightFoot, AvatarIKGoal.RightFoot);
+            SetIKPosition(isMidAnim, goals.lh, current.leftHand, AvatarIKGoal.LeftHand);
+            SetIKPosition(isMidAnim, goals.rh, current.rightHand, AvatarIKGoal.RightHand);
 
             UpdateIKWeight(AvatarIKGoal.LeftFoot, 1);
             UpdateIKWeight(AvatarIKGoal.RightFoot, 1);
             UpdateIKWeight(AvatarIKGoal.LeftHand, 1);
             UpdateIKWeight(AvatarIKGoal.RightHand, 1); 
+        }
+
+        void UpdateGoals(Vector3 moveDir)
+        {
+            isLeft = (moveDir.x <= 0);
+
+            if(moveDir.x != 0)
+            {
+                goals.lh = isLeft; 
+                goals.rh = !isLeft;
+                goals.lf = isLeft;
+                goals.rf = !isLeft;
+            }
+            else
+            {
+                bool isEnabled = isMirror; 
+                if(moveDir.y < 0)
+                {
+                    isEnabled = !isEnabled;
+                }
+
+                goals.lh = !isEnabled;
+                goals.rh = isEnabled;
+                goals.lf = !isEnabled;
+                goals.rf = isEnabled;
+            }
+        }
+
+        public void HandleAnimation(Vector3 moveDir, bool isMidAnim)
+        {
+            if(isMidAnim)
+            {
+                if(moveDir.y != 0)
+                {
+                    if(moveDir.y < 0)
+                    {
+
+                    }
+                    else
+                    {
+
+                    }
+                    isMirror = !isMirror;
+                    animator.SetBool("mirror", isMirror);
+
+                    animator.CrossFade("Climb_Up", 0.2f);
+                }
+            }
+            else
+            {
+                animator.CrossFade("Climb_Idle", 0.2f); 
+            }
         }
 
         public IKSnapshot CreateSnapshot(Vector3 o)
@@ -94,6 +166,26 @@ namespace DO
             to.rightFoot = from.rightFoot; 
         }
 
+        void SetIKPosition(bool isMidAnimation, bool isTrue, Vector3 pos, AvatarIKGoal goal)
+        {
+            if(isMidAnimation)
+            {
+                if(isTrue)
+                {
+                    Vector3 p = GetActualPos(pos);
+                    UpdateIKPosition(goal, p); 
+                }
+            }
+            else
+            {
+                if(!isTrue)
+                {
+                    Vector3 p = GetActualPos(pos);
+                    UpdateIKPosition(goal, p); 
+                }
+            }
+        }
+
         public void UpdateIKPosition(AvatarIKGoal goal, Vector3 pos)
         {
           switch (goal)
@@ -112,7 +204,7 @@ namespace DO
                     break;
                 default:
                     break; 
-            }
+          }
         }
 
         public void UpdateIKWeight(AvatarIKGoal goal, float weight)
@@ -126,7 +218,7 @@ namespace DO
                     w_rightFoot = weight; 
                     break;
                 case AvatarIKGoal.LeftHand:
-                    w_lefthHand = weight; 
+                    w_leftHand = weight; 
                     break;
                 case AvatarIKGoal.RightHand:
                     w_rightHand = weight; 
@@ -136,18 +228,91 @@ namespace DO
             }
         }
 
-        private void OnAnimatorIK()
+        public void OnAnimatorIK()
         {
-            SetIKPosition(AvatarIKGoal.LeftHand, leftHand, w_rightHand);
+            delta = Time.deltaTime; 
+
+            SetIKPosition(AvatarIKGoal.LeftHand, leftHand, w_leftHand);
             SetIKPosition(AvatarIKGoal.RightHand, rightHand, w_rightHand);
             SetIKPosition(AvatarIKGoal.LeftFoot, leftFoot, w_leftFoot);
             SetIKPosition(AvatarIKGoal.RightFoot, rightFoot, w_rightFoot); 
         }
 
-        void SetIKPosition(AvatarIKGoal goal, Vector3 targetPosition, float weight)
+        public void SetIKPosition(AvatarIKGoal goal, Vector3 targetPosition, float weight)
         {
-            animator.SetIKPositionWeight(goal, weight);
-            animator.SetIKPosition(goal, targetPosition); 
+            IKStates ikState = GetIKStates(goal); 
+            if(ikState == null)
+            {
+                ikState = new IKStates();
+                ikState.goal = goal;
+                ikStates.Add(ikState); 
+            }
+
+            if(weight == 0)
+            {
+                ikState.isSet = false; 
+            }
+
+            if(!ikState.isSet)
+            {
+                ikState.postition = GoalToBodyBones(goal).position;
+                ikState.isSet = true; 
+            }
+            ikState.positionWeight = weight;
+            ikState.postition = Vector3.Lerp(ikState.postition, targetPosition, delta * lerpSpeed); 
+
+            animator.SetIKPositionWeight(goal, ikState.positionWeight);
+            animator.SetIKPosition(goal, ikState.postition); 
         }
+
+        Transform GoalToBodyBones(AvatarIKGoal goal)
+        {
+            switch(goal)
+            {
+                case AvatarIKGoal.LeftFoot:
+                    return animator.GetBoneTransform(HumanBodyBones.LeftFoot); 
+
+                case AvatarIKGoal.RightFoot:
+                    return animator.GetBoneTransform(HumanBodyBones.RightFoot);
+   
+                case AvatarIKGoal.LeftHand:
+                    return animator.GetBoneTransform(HumanBodyBones.LeftHand);
+      
+                default: 
+                case AvatarIKGoal.RightHand:
+                    return animator.GetBoneTransform(HumanBodyBones.RightHand);
+            }
+        }
+
+        IKStates GetIKStates(AvatarIKGoal goal)
+        {
+            IKStates r = null; 
+            foreach (IKStates i in ikStates)
+            {
+                if(i.goal == goal)
+                {
+                    r = i;
+                    break;
+                }
+            }
+            return r; 
+        }
+        List<IKStates> ikStates = new List<IKStates>(); 
+
+        class IKStates
+        {
+            public AvatarIKGoal goal;
+            public Vector3 postition;
+            public float positionWeight;
+            public bool isSet = false; 
+        }
+    }
+
+    public class IKGoals
+    {
+        public bool rh;
+        public bool lh;
+        public bool lf;
+        public bool rf; 
     }
 }

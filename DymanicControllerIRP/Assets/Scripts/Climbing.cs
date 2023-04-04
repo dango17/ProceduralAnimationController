@@ -30,7 +30,9 @@ namespace DO
 
         public IKSnapshot baseIKsnapshot;
 
-        public ClimbingAnimation climbingAnimator; 
+        public ClimbingAnimation climbingAnimator;
+
+        public bool isMidAnim; 
 
         Transform helper;
         float delta; 
@@ -100,16 +102,30 @@ namespace DO
                 Vector3 v = helper.up * vertical;
                 Vector3 moveDir = (h + v).normalized;
 
-                bool canMove = CanMove(moveDir);
-                if (!canMove || moveDir == Vector3.zero)
-                    return;
+                if(isMidAnim)
+                {
+                    if (moveDir == Vector3.zero)
+                        return; 
+                }
+                else
+                {
+                    bool canMove = CanMove(moveDir);
+                    if (!canMove || moveDir == Vector3.zero)
+                        return;
+                }
+
+                isMidAnim = !isMidAnim; 
 
                 t = 0;
                 isLerping = true;
                 startPos = transform.position;
-                //Vector3 targetPosition = helper.position - transform.position;
-                targetPos = helper.position;
-                climbingAnimator.CreatePositions(targetPos); 
+                Vector3 targetPosition = helper.position - transform.position;
+                float d = Vector3.Distance(helper.position, startPos) / 2;
+                targetPosition *= positionOffset;
+                targetPosition += transform.position;
+                targetPos = (isMidAnim) ? targetPos : helper.position; 
+
+                climbingAnimator.CreatePositions(targetPos, moveDir, isMidAnim); 
             }
             else
             {
@@ -177,7 +193,7 @@ namespace DO
                 t = 1;
                 isinPositition = true;
 
-                climbingAnimator.CreatePositions(targetPos); 
+                climbingAnimator.CreatePositions(targetPos, Vector3.zero, false); 
             }
 
             Vector3 targetPosition = Vector3.Lerp(startPos, targetPos, t);
