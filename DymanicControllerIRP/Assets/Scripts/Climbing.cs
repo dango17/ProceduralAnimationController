@@ -28,6 +28,10 @@ namespace DO
         public float horizontal;
         public float vertical; 
 
+        public IKSnapshot baseIKsnapshot;
+
+        public ClimbingAnimation climbingAnimator; 
+
         Transform helper;
         float delta; 
 
@@ -42,6 +46,7 @@ namespace DO
             helper = new GameObject().transform;
             helper.name = "Climb Helper";
 
+            climbingAnimator.Initalization(this, helper);  
             CheckForClimb();
         }
 
@@ -103,7 +108,8 @@ namespace DO
                 isLerping = true;
                 startPos = transform.position;
                 //Vector3 targetPosition = helper.position - transform.position;
-                targetPos = helper.position; 
+                targetPos = helper.position;
+                climbingAnimator.CreatePositions(targetPos); 
             }
             else
             {
@@ -169,9 +175,9 @@ namespace DO
             if (t > 1)
             {
                 t = 1;
-                isinPositition = true; 
+                isinPositition = true;
 
-                //Enable IK here
+                climbingAnimator.CreatePositions(targetPos); 
             }
 
             Vector3 targetPosition = Vector3.Lerp(startPos, targetPos, t);
@@ -187,5 +193,11 @@ namespace DO
 
             return target + offset; 
         }
+    }
+
+    [System.Serializable]
+    public class IKSnapshot
+    {
+        public Vector3 rightHand, leftHand, leftFoot, rightFoot; 
     }
 }
