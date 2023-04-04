@@ -82,10 +82,11 @@ namespace DO
                     isEnabled = !isEnabled;
                 }
 
-                goals.lh = !isEnabled;
-                goals.rh = isEnabled;
-                goals.lf = !isEnabled;
-                goals.rf = isEnabled;
+                //Wont mirror on the left?
+                goals.lh = isEnabled;
+                goals.rh = !isEnabled;
+                goals.lf = isEnabled;
+                goals.rf = !isEnabled;
             }
         }
 
@@ -132,7 +133,7 @@ namespace DO
             return r; 
         }
 
-        public float wallOffset = 0f;
+        public float wallOffset = 0.1f;
 
         Vector3 GetActualPos(Vector3 o)
         {

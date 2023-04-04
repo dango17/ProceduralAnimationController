@@ -119,11 +119,11 @@ namespace DO
                 t = 0;
                 isLerping = true;
                 startPos = transform.position;
-                Vector3 targetPosition = helper.position - transform.position;
+                Vector3 tp = helper.position - transform.position;
                 float d = Vector3.Distance(helper.position, startPos) / 2;
-                targetPosition *= positionOffset;
-                targetPosition += transform.position;
-                targetPos = (isMidAnim) ? targetPos : helper.position; 
+                tp *= positionOffset;
+                tp += transform.position;
+                targetPos = (isMidAnim) ? tp : helper.position; 
 
                 climbingAnimator.CreatePositions(targetPos, moveDir, isMidAnim); 
             }

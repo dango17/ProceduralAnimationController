@@ -8667,7 +8667,7 @@ MonoBehaviour:
   w_leftHand: 0
   w_leftFoot: 0
   w_rightFoot: 0
-  lerpSpeed: 5
+  lerpSpeed: 8
   wallOffset: 0.1
 --- !u!137 &6585324416813616656
 SkinnedMeshRenderer:
