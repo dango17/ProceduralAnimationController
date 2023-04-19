@@ -65,9 +65,15 @@ namespace DO
 
         void UpdateGoals(Vector3 moveDir)
         {
+            Vector3 forward = transform.forward;
+            Vector3 right = transform.right;
+
+            float dotForward = Vector3.Dot(moveDir, forward);
+            float dotRight = Vector3.Dot(moveDir, right);
+
             isLeft = (moveDir.x <= 0);
 
-            if(moveDir.x != 0)
+            if(Mathf.Abs(dotForward) > Mathf.Abs(dotRight))
             {
                 goals.lh = isLeft; 
                 goals.rh = !isLeft;
