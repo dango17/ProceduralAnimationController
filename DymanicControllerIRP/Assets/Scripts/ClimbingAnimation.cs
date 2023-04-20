@@ -18,10 +18,10 @@ namespace DO
         public float w_leftFoot;
         public float w_rightFoot;
 
-        Vector3 rightHand, leftHand, rightFoot, leftFoot;
+        public Vector3 rightHand, leftHand, rightFoot, leftFoot;
         Transform h;
 
-        bool isMirror;
+        public bool isMirror;
         bool isLeft;
         Vector3 previousMoveDirection;
 
@@ -322,4 +322,6 @@ namespace DO
         public bool lf;
         public bool rf; 
     }
+
+
 }

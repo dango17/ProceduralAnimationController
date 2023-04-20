@@ -52,7 +52,7 @@ namespace DO
             helper.name = "Climb Helper";
 
             climbingAnimator.Initalization(this, helper);  
-            CheckForClimb();
+            //CheckForClimb();
         }
 
         public void CheckForClimb()
@@ -78,12 +78,6 @@ namespace DO
             t = 0;
             isinPositition = false;
             anim.CrossFade("Climb_Idle", 2); 
-        }
-
-        void Update()
-        {
-            delta = Time.deltaTime; 
-            Tick(delta); 
         }
 
         //Pass delta from Tick one TPC is completed 
