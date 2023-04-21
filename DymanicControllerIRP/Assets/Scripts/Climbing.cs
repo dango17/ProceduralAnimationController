@@ -34,6 +34,8 @@ namespace DO
         public IKSnapshot baseIKsnapshot;
 
         public ClimbingAnimation climbingAnimator;
+        CharacterController characterController; 
+        public LayerMask ignoreLayers = ~(1 << 8);
 
         public bool isMidAnim; 
 
@@ -42,6 +44,7 @@ namespace DO
 
         private void Start()
         {
+            characterController = GetComponent<CharacterController>(); 
             Initalize(); 
         }
 
@@ -51,26 +54,31 @@ namespace DO
             helper = new GameObject().transform;
             helper.name = "Climb Helper";
 
-            climbingAnimator.Initalization(this, helper);  
+            climbingAnimator.Initalization(this, helper);
+            ignoreLayers = ~(1 << 8); 
             //CheckForClimb();
         }
 
-        public void CheckForClimb()
+        public bool CheckForClimb()
         {
             Vector3 origin = transform.position;
-            origin.y += 1.4f;
+            origin.y += 0.02f;
             Vector3 dir = transform.forward;
             RaycastHit hit; 
-            if(Physics.Raycast(origin, dir, out hit, 5))
+            if(Physics.Raycast(origin, dir, out hit, 0.5f, ignoreLayers))
             {
                 helper.position = PosWithOffset(origin, hit.point);
-                InitalizeClimbing(hit); 
+                InitalizeClimbing(hit);
+
+                return true; 
             }
+            return false; 
         }
 
         void InitalizeClimbing(RaycastHit hit)
         {
             isClimbing = true;
+            climbingAnimator.enabled = true; 
 
             helper.transform.rotation = Quaternion.LookRotation(-hit.normal);
             startPos = transform.position;
@@ -81,8 +89,9 @@ namespace DO
         }
 
         //Pass delta from Tick one TPC is completed 
-        public void Tick(float delta)
+        public void Tick(float delta_time)
         {
+            this.delta = delta_time; 
             if(!isinPositition)
             {
                 GetInPosition(); 
@@ -126,7 +135,7 @@ namespace DO
             }
             else
             {
-                t += delta * climbSpeed;
+                t += delta_time * climbSpeed;
                 if(t > 1)
                 {
                     t = 1;
@@ -134,7 +143,8 @@ namespace DO
                 }
                 Vector3 climbPosition = Vector3.Lerp(startPos, targetPos, t);
                 transform.position = climbPosition;
-                transform.rotation = Quaternion.Slerp(transform.rotation, helper.rotation, delta * rotateSpeed);
+                transform.rotation = Quaternion.Slerp(transform.rotation, helper.rotation, delta_time * rotateSpeed);
+                LookForGround(); 
             }
         }
 
@@ -183,7 +193,6 @@ namespace DO
             dir = -Vector3.up;
 
             DebugLine.singleton.SetLine(origin, origin + dir, 2);
-            //Debug.DrawRay(origin, dir, Color.yellow); 
             if(Physics.Raycast(origin, dir, out hit, dis2))
             {
                 float angle = Vector3.Angle(-helper.forward, hit.normal); 
@@ -199,13 +208,14 @@ namespace DO
 
         void GetInPosition()
         {
-            t += Time.deltaTime;
+            t += delta * 3; 
 
             if (t > 1)
             {
                 t = 1;
                 isinPositition = true;
-
+                horizontal = 0;
+                vertical = 0; 
                 climbingAnimator.CreatePositions(targetPos, Vector3.zero, false); 
             }
 
@@ -221,6 +231,19 @@ namespace DO
             Vector3 offset = direction * offsetFromWall;
 
             return target + offset; 
+        }
+
+        public void LookForGround()
+        {
+            Vector3 origin = transform.position;
+            Vector3 direction = -transform.up;
+            RaycastHit hit; 
+            if(Physics.Raycast(origin, direction, out hit, rayTowardsMoveDir + 0.05f, ignoreLayers))
+            {
+                isClimbing = false;
+                characterController.EnableController();
+                climbingAnimator.enabled = false; 
+            }
         }
     }
 

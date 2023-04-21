@@ -24,7 +24,14 @@ namespace DO
 
         bool isGrounded;
         bool keepOffGround;
-        float savedTime; 
+
+        float savedTime;
+        float climbTimer; 
+
+        public bool isClimbing;
+        public bool climbOff; 
+
+        Climbing climbing;
 
         public void Start()
         {
@@ -35,11 +42,15 @@ namespace DO
 
             cameraHolder = CameraManager.singleton.transform; 
             collider = GetComponent<Collider>();
-            animator = GetComponentInChildren<Animator>(); 
+            animator = GetComponentInChildren<Animator>();
+            climbing = GetComponent<Climbing>(); 
         }
 
         private void FixedUpdate()
         {
+            if (isClimbing)
+                return; 
+
             isGrounded = OnGround();
             Movement(); 
         }
@@ -72,6 +83,12 @@ namespace DO
 
         public void Update()
         {
+            if (isClimbing)
+            {
+                climbing.Tick(Time.deltaTime);
+                return; 
+            }
+
             isGrounded = OnGround();
             
             if(keepOffGround)
@@ -84,6 +101,25 @@ namespace DO
 
             Jump(); 
 
+            if(!isGrounded && !keepOffGround)
+            {
+                if(!climbOff)
+                {
+                    isClimbing = climbing.CheckForClimb();
+                    if (isClimbing)
+                    {
+                        DisableController();
+                    }
+                }
+            }
+
+            if(climbOff)
+            {
+                if(Time.realtimeSinceStartup - climbTimer > 1)
+                {
+                    climbOff = false; 
+                }
+            }
             animator.SetFloat("move", moveAmount);
             animator.SetBool("onAir", !isGrounded);
         }
@@ -118,6 +154,22 @@ namespace DO
                 return true; 
             }
             return false; 
+        }
+
+        public void DisableController()
+        {
+            rigidbody.isKinematic = true;
+            collider.enabled = false; 
+        }
+
+        public void EnableController()
+        {
+            rigidbody.isKinematic = false;
+            collider.enabled = true;
+            animator.CrossFade("onAir", 0.2f);
+            climbOff = true;
+            climbTimer = Time.realtimeSinceStartup;
+            isClimbing = false; 
         }
     }
 }
