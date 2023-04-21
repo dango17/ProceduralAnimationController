@@ -33,8 +33,8 @@ namespace DO
         bool isLeft;
 
         //The previous movement direction of the character
-        Vector3 previousMoveDirection;
-        float delta;
+        public Vector3 previousMoveDirection;
+        public float delta;
 
         //The speed at which the character moves between IK poses
         public float lerpSpeed = 1;
