@@ -88,7 +88,6 @@ namespace DO
             anim.CrossFade("Climb_Idle", 2); 
         }
 
-        //Pass delta from Tick one TPC is completed 
         public void Tick(float delta_time)
         {
             this.delta = delta_time; 
@@ -100,6 +99,14 @@ namespace DO
 
             if(!isLerping)
             {
+                bool cancel = Input.GetKeyUp(KeyCode.X);
+                if(cancel)
+                {
+                    CancelClimb();
+                    return; 
+                }
+
+
                 horizontal = Input.GetAxis("Horizontal");
                 vertical = Input.GetAxis("Vertical");
                 float moveAmount = Mathf.Abs(horizontal) + Mathf.Abs(vertical);
@@ -132,6 +139,7 @@ namespace DO
                 targetPos = (isMidAnim) ? tp : helper.position; 
 
                 climbingAnimator.CreatePositions(targetPos, moveDir, isMidAnim); 
+
             }
             else
             {
@@ -144,7 +152,7 @@ namespace DO
                 Vector3 climbPosition = Vector3.Lerp(startPos, targetPos, t);
                 transform.position = climbPosition;
                 transform.rotation = Quaternion.Slerp(transform.rotation, helper.rotation, delta_time * rotateSpeed);
-                LookForGround(); 
+                LookForGround();
             }
         }
 
@@ -154,7 +162,8 @@ namespace DO
             float dis = rayTowardsMoveDir;
             Vector3 dir = moveDir;
 
-            DebugLine.singleton.SetLine(origin, origin + (dir * dis), 0); 
+            DebugLine.singleton.SetLine(origin, origin + (dir * dis), 0);
+            DebugLine.singleton.SetLineColor(Color.blue, 0);
 
             RaycastHit hit; 
             if(Physics.Raycast(origin, dir, out hit, dis))
@@ -169,7 +178,8 @@ namespace DO
 
             //Raycast towards the wall 
             DebugLine.singleton.SetLine(origin, origin + (dir * dis2), 1);
-            if(Physics.Raycast(origin, dir, out hit, dis2))
+            DebugLine.singleton.SetLineColor(Color.blue, 0);
+            if (Physics.Raycast(origin, dir, out hit, dis2))
             {
                 helper.position = PosWithOffset(origin, hit.point);
                 helper.rotation = Quaternion.LookRotation(-hit.normal);
@@ -193,7 +203,8 @@ namespace DO
             dir = -Vector3.up;
 
             DebugLine.singleton.SetLine(origin, origin + dir, 2);
-            if(Physics.Raycast(origin, dir, out hit, dis2))
+            DebugLine.singleton.SetLineColor(Color.blue, 0);
+            if (Physics.Raycast(origin, dir, out hit, dis2))
             {
                 float angle = Vector3.Angle(-helper.forward, hit.normal); 
                 if(angle < 40)
@@ -240,10 +251,15 @@ namespace DO
             RaycastHit hit; 
             if(Physics.Raycast(origin, direction, out hit, rayTowardsMoveDir + 0.05f, ignoreLayers))
             {
-                isClimbing = false;
-                characterController.EnableController();
-                climbingAnimator.enabled = false; 
+                CancelClimb(); 
             }
+        }
+
+        public void CancelClimb()
+        {
+            isClimbing = false;
+            characterController.EnableController();
+            climbingAnimator.enabled = false;
         }
     }
 
