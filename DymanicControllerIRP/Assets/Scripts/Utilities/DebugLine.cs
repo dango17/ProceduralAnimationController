@@ -9,11 +9,7 @@ namespace DO
         public int maxRenderers;
         List<LineRenderer> lines = new List<LineRenderer>();
 
-        private void Start()
-        {
-           
-        }
-
+        //Create a new line renderer with given index
         void CreateLine(int i)
         {
             GameObject go = new GameObject();
@@ -31,6 +27,7 @@ namespace DO
             }
         }
 
+        //Sets start and end points of the line renderer at given index
         public void SetLine(Vector3 startpos, Vector3 endpos, int index)
         {
             if (index > lines.Count - 1)
@@ -46,6 +43,7 @@ namespace DO
 
         }
 
+        //Sets the color of the line renderer at given index
         public void SetLineColor(Color color, int index)
         {
             if (index > lines.Count - 1)

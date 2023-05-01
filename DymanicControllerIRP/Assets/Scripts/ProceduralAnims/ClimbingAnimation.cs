@@ -121,12 +121,12 @@ namespace DO
             }
         }
 
-        //handles the animation based on the movement direction and if the animation is in the middle of playing
+        //Handles the animation based on the movement direction and if the animation is in the middle of playing
         public void HandleAnimation(Vector3 moveDir, bool isMidAnim)
         {
             if(isMidAnim)
             {
-                //if the animation is in the middle of playing and the movement is up, copy the current snapshot and switch the mirror flag
+                //If the animation is in the middle of playing and the movement is up, copy the current snapshot and switch the mirror flag
                 if (moveDir.y != 0)
                 {
                     CopySnapshot(ref current, ikBase); 
@@ -142,7 +142,7 @@ namespace DO
                     isMirror = !isMirror;
                     animator.SetBool("mirror", isMirror);
 
-                    //if the animation is not in the middle of playing, crossfade to the idle animation
+                    //If the animation is not in the middle of playing, crossfade to the idle animation
                     animator.CrossFade("Climb_Up", 0.2f);
                 }
             }

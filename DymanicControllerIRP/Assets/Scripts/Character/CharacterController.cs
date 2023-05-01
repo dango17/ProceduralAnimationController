@@ -48,9 +48,11 @@ namespace DO
 
         private void FixedUpdate()
         {
+            //Return if player is climbing
             if (isClimbing)
                 return; 
 
+            //Check if player is grounded
             isGrounded = OnGround();
             Movement(); 
         }
@@ -60,10 +62,13 @@ namespace DO
             horizontal = Input.GetAxis("Horizontal");
             vertical = Input.GetAxis("Vertical");
 
+            //Calculate forward vector of the camera
             camYForward = cameraHolder.forward;
+            //Calculate vertical and horizonral movement
             Vector3 v = vertical * cameraHolder.forward;
             Vector3 h = horizontal * cameraHolder.right;
 
+            //Calculate the move direction & the amount of movement 
             moveDirection = (v + h).normalized;
             moveAmount = Mathf.Clamp01((Mathf.Abs(horizontal) + Mathf.Abs(vertical)));
 
@@ -72,10 +77,12 @@ namespace DO
             if (targetDir == Vector3.zero)
                 targetDir = transform.forward;
 
+            //Calculate the direction of the look direction
             Quaternion lookDir = Quaternion.LookRotation(targetDir);
             Quaternion targetRotation = Quaternion.Slerp(transform.rotation, lookDir, Time.deltaTime * rotateSpeed);
             transform.rotation = targetRotation;
 
+            //Direction of movement 
             Vector3 dir = transform.forward * (moveSpeed * moveAmount);
             dir.y = rigidbody.velocity.y; 
             rigidbody.velocity = dir;
@@ -85,6 +92,7 @@ namespace DO
         {
             if (isClimbing)
             {
+                //If player is currently climbing, skip this method 
                 climbing.Tick(Time.deltaTime);
                 return; 
             }
@@ -93,7 +101,9 @@ namespace DO
             
             if(keepOffGround)
             {
-                if(Time.realtimeSinceStartup - savedTime > 0.5f)
+                //If the player has recently jumped and should still be kept off the ground,
+                //wait for a short period of time before allowing the character to land again
+                if (Time.realtimeSinceStartup - savedTime > 0.5f)
                 {
                     keepOffGround = false; 
                 }
@@ -103,7 +113,9 @@ namespace DO
 
             if(!isGrounded && !keepOffGround)
             {
-                if(!climbOff)
+                //If the player is not currently on the ground and has finished jumping,
+                //check if there is a climbable surface nearby and start climbing if there is
+                if (!climbOff)
                 {
                     isClimbing = climbing.CheckForClimb();
                     if (isClimbing)
@@ -115,7 +127,9 @@ namespace DO
 
             if(climbOff)
             {
-                if(Time.realtimeSinceStartup - climbTimer > 1)
+                //If the player has recently finished climbing, wait for a short period of time
+                //before allowing the character to climb again
+                if (Time.realtimeSinceStartup - climbTimer > 1)
                 {
                     climbOff = false; 
                 }
@@ -128,6 +142,8 @@ namespace DO
         {
             if (isGrounded)
             {
+                //If the character is on the ground, check if the jump button is pressed and
+                //apply a vertical force to the character's Rigidbody if it is
                 bool jump = Input.GetButton("Jump");
                 if (jump)
                 {
@@ -143,8 +159,10 @@ namespace DO
         bool OnGround()
         {
             if (keepOffGround)
-                return false; 
+                return false;
 
+            //Check if the character is currently on the ground by casting a ray downwards from
+            //the character's position and checking if it hits anything within a certain distance
             Vector3 origin = transform.position;
             origin.y += 0.4f;
             Vector3 direction = -transform.up;
@@ -158,12 +176,16 @@ namespace DO
 
         public void DisableController()
         {
+            //Disable the character's Rigidbody and Collider to prevent it from moving or colliding
+            //with objects in the scene while it is climbing
             rigidbody.isKinematic = true;
             collider.enabled = false; 
         }
 
         public void EnableController()
         {
+            //Re-enable the character's Rigidbody and Collider and switch the animation state to
+            //"onAir" to indicate that the character is no longer climbing
             rigidbody.isKinematic = false;
             collider.enabled = true;
             animator.CrossFade("onAir", 0.2f);
