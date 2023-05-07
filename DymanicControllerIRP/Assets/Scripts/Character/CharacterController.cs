@@ -29,7 +29,10 @@ namespace DO
         float climbTimer; 
 
         public bool isClimbing;
-        public bool climbOff; 
+        public bool climbOff;
+
+        public GameObject playerRagdollRig;
+        public CapsuleCollider playersMaincollider; 
 
         Climbing climbing;
 
@@ -43,7 +46,11 @@ namespace DO
             cameraHolder = CameraManager.singleton.transform; 
             collider = GetComponent<Collider>();
             animator = GetComponentInChildren<Animator>();
-            climbing = GetComponent<Climbing>(); 
+            climbing = GetComponent<Climbing>();
+
+            GetRagdollComponents();
+
+            RagdollOff(); 
         }
 
         private void FixedUpdate()
@@ -54,7 +61,12 @@ namespace DO
 
             //Check if player is grounded
             isGrounded = OnGround();
-            Movement(); 
+            Movement();
+        }
+
+        void LateUpdate()
+        {
+           
         }
 
         public void Movement()
@@ -192,6 +204,46 @@ namespace DO
             climbOff = true;
             climbTimer = Time.realtimeSinceStartup;
             isClimbing = false; 
+        }
+
+        Collider[] ragdollColliders;
+        Rigidbody[] limbsRigidbodies;
+        public void GetRagdollComponents()
+        {
+            ragdollColliders = playerRagdollRig.GetComponentsInChildren<Collider>();
+            limbsRigidbodies = playerRagdollRig.GetComponentsInChildren<Rigidbody>(); 
+        }
+
+        public void RagdollOn()
+        {
+            animator.enabled = false;
+            playersMaincollider.enabled = false; 
+
+            foreach (Collider col in ragdollColliders)
+            {
+                col.enabled = true;
+            }
+
+            foreach (Rigidbody rigidbody in limbsRigidbodies)
+            {
+                rigidbody.isKinematic = false;
+            }
+
+            GetComponent<Rigidbody>().isKinematic = true;         
+        }
+
+        public void RagdollOff()
+        {
+            foreach(Collider col in ragdollColliders)
+            {
+                col.enabled = false; 
+            }
+
+            foreach(Rigidbody rigidbody in limbsRigidbodies)
+            {
+                rigidbody.isKinematic = true; 
+            }
+            GetComponent<Rigidbody>().isKinematic = false; 
         }
     }
 }
