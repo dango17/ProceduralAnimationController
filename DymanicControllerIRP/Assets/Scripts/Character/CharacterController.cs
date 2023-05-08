@@ -17,6 +17,7 @@ namespace DO
         Rigidbody rigidbody;
         Collider collider;
         Animator animator;
+        
 
         public float moveSpeed = 4;
         public float rotateSpeed = 9;
@@ -29,6 +30,7 @@ namespace DO
         float climbTimer; 
 
         public bool isClimbing;
+        public bool canMove = true; 
         public bool climbOff;
 
         public GameObject playerRagdollRig;
@@ -49,7 +51,6 @@ namespace DO
             climbing = GetComponent<Climbing>();
 
             GetRagdollComponents();
-
             RagdollOff(); 
         }
 
@@ -71,33 +72,36 @@ namespace DO
 
         public void Movement()
         {
-            horizontal = Input.GetAxis("Horizontal");
-            vertical = Input.GetAxis("Vertical");
+            if (canMove)
+            {
+                horizontal = Input.GetAxis("Horizontal");
+                vertical = Input.GetAxis("Vertical");
 
-            //Calculate forward vector of the camera
-            camYForward = cameraHolder.forward;
-            //Calculate vertical and horizonral movement
-            Vector3 v = vertical * cameraHolder.forward;
-            Vector3 h = horizontal * cameraHolder.right;
+                //Calculate forward vector of the camera
+                camYForward = cameraHolder.forward;
+                //Calculate vertical and horizonral movement
+                Vector3 v = vertical * cameraHolder.forward;
+                Vector3 h = horizontal * cameraHolder.right;
 
-            //Calculate the move direction & the amount of movement 
-            moveDirection = (v + h).normalized;
-            moveAmount = Mathf.Clamp01((Mathf.Abs(horizontal) + Mathf.Abs(vertical)));
+                //Calculate the move direction & the amount of movement 
+                moveDirection = (v + h).normalized;
+                moveAmount = Mathf.Clamp01((Mathf.Abs(horizontal) + Mathf.Abs(vertical)));
 
-            Vector3 targetDir = moveDirection;
-            targetDir.y = 0;
-            if (targetDir == Vector3.zero)
-                targetDir = transform.forward;
+                Vector3 targetDir = moveDirection;
+                targetDir.y = 0;
+                if (targetDir == Vector3.zero)
+                    targetDir = transform.forward;
 
-            //Calculate the direction of the look direction
-            Quaternion lookDir = Quaternion.LookRotation(targetDir);
-            Quaternion targetRotation = Quaternion.Slerp(transform.rotation, lookDir, Time.deltaTime * rotateSpeed);
-            transform.rotation = targetRotation;
+                //Calculate the direction of the look direction
+                Quaternion lookDir = Quaternion.LookRotation(targetDir);
+                Quaternion targetRotation = Quaternion.Slerp(transform.rotation, lookDir, Time.deltaTime * rotateSpeed);
+                transform.rotation = targetRotation;
 
-            //Direction of movement 
-            Vector3 dir = transform.forward * (moveSpeed * moveAmount);
-            dir.y = rigidbody.velocity.y; 
-            rigidbody.velocity = dir;
+                //Direction of movement 
+                Vector3 dir = transform.forward * (moveSpeed * moveAmount);
+                dir.y = rigidbody.velocity.y;
+                rigidbody.velocity = dir;
+            }        
         }
 
         public void Update()
@@ -137,7 +141,13 @@ namespace DO
                 }
             }
 
-            if(climbOff)
+            if(Input.GetKeyUp(KeyCode.KeypadEnter))
+            {
+                RagdollOn(); 
+            }
+
+
+            if (climbOff)
             {
                 //If the player has recently finished climbing, wait for a short period of time
                 //before allowing the character to climb again
@@ -216,8 +226,16 @@ namespace DO
 
         public void RagdollOn()
         {
+            RagdollOff();
+
+            canMove = false;
+            gameObject.GetComponent<CharacterController>().enabled = false; 
+
             animator.enabled = false;
-            playersMaincollider.enabled = false; 
+            playersMaincollider.enabled = false;
+
+            int torque = 5;
+            int force = 3; 
 
             foreach (Collider col in ragdollColliders)
             {
@@ -227,9 +245,14 @@ namespace DO
             foreach (Rigidbody rigidbody in limbsRigidbodies)
             {
                 rigidbody.isKinematic = false;
+
+                //Apply some torque and force to the rigidbody
+                rigidbody.AddRelativeTorque(Vector3.up * torque, ForceMode.Impulse);
+                rigidbody.AddRelativeForce(Vector3.forward * force, ForceMode.Impulse);
             }
 
-            GetComponent<Rigidbody>().isKinematic = true;         
+            Rigidbody rootRigidbody = GetComponent<Rigidbody>();
+            rootRigidbody.isKinematic = true;
         }
 
         public void RagdollOff()
