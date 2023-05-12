@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace DO
@@ -15,6 +14,7 @@ namespace DO
         Transform cameraHolder; 
 
         Rigidbody rigidbody;
+
         Collider collider;
         Animator animator;
         
@@ -62,6 +62,13 @@ namespace DO
 
             //Check if player is grounded
             isGrounded = OnGround();
+  
+            //Check if the player is falling at a great speed, if so ragdoll
+            if (!isGrounded && rigidbody.velocity.y < -10)
+            {
+                RagdollOn();
+            }
+
             Movement();
         }
 
@@ -235,20 +242,28 @@ namespace DO
             playersMaincollider.enabled = false;
 
             int torque = 5;
-            int force = 3; 
+            int force = 5; 
 
             foreach (Collider col in ragdollColliders)
             {
                 col.enabled = true;
             }
 
-            foreach (Rigidbody rigidbody in limbsRigidbodies)
+            Vector3 currentVelocity = rigidbody.velocity;
+            foreach (Rigidbody rigidbody in playerRagdollRig.GetComponentsInChildren<Rigidbody>())
             {
                 rigidbody.isKinematic = false;
 
-                //Apply some torque and force to the rigidbody
-                rigidbody.AddRelativeTorque(Vector3.up * torque, ForceMode.Impulse);
-                rigidbody.AddRelativeForce(Vector3.forward * force, ForceMode.Impulse);
+                rigidbody.velocity = currentVelocity;
+
+                //Apply some torque and force to the rigidbodys
+                Vector3 randomTorque = new Vector3(Random.Range(-torque, torque), Random.Range(-torque, torque), Random.Range(-torque, torque));
+                Vector3 randomForce = new Vector3(Random.Range(-force, force), Random.Range(-force, force), Random.Range(-force, force));
+                rigidbody.AddRelativeTorque(randomTorque, ForceMode.Impulse);
+                rigidbody.AddRelativeForce(randomForce, ForceMode.Impulse);
+
+                //Set the velocity of the ragdoll Rigidbody component to the players velocity
+                rigidbody.velocity = moveDirection.normalized * moveSpeed * moveAmount;
             }
 
             Rigidbody rootRigidbody = GetComponent<Rigidbody>();
@@ -259,7 +274,7 @@ namespace DO
         {
             foreach(Collider col in ragdollColliders)
             {
-                col.enabled = false; 
+                col.enabled = false;
             }
 
             foreach(Rigidbody rigidbody in limbsRigidbodies)
